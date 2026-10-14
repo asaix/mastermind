@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "include/utils.h"
+#include "include/term.h"
 
 int main(int argc, char* argv[])
 {
@@ -29,5 +30,8 @@ int main(int argc, char* argv[])
 
     printf("[DEBUG] CostCutting: %d\n", costCutting);
     printf("[DEBUG] LogOn: %d\n", logOn);
+
+    char* name = name_entry();
+    printf("[DEBUG] Name: %s\n", name);
     return 0;
 }

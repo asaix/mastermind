@@ -4,6 +4,10 @@
 #include "include/utils.h"
 #include "include/term.h"
 
+// err 1: generic error
+// err 2: network error
+
+
 int main(int argc, char* argv[])
 {
 

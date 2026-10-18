@@ -1,6 +1,8 @@
 #ifndef TERM_H
 #define TERM_H
 
+#define MAX_NAME_SIZE 15
+
 char* name_entry();
 
 // screen / cursor control

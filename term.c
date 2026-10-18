@@ -4,8 +4,6 @@
 
 #include "include/term.h"
 
-#define MAX_NAME_SIZE 15
-
 char* name_entry() {
     char* name = malloc(MAX_NAME_SIZE * 2 * sizeof(char));
 

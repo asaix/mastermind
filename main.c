@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <poll.h>
+#include <unistd.h>
 
 #include "include/utils.h"
 #include "include/term.h"
@@ -52,11 +53,24 @@ int main(int argc, char* argv[])
     cls();
     draw_prompt();
 
-    struct pollfd pfd = { .fd = discSock, .events = POLLIN };
+    struct pollfd pfds[2] = {
+        { .fd = discSock, .events = POLLIN },
+        { .fd = STDIN_FILENO, .events = POLLIN },
+    };
     while (true) {
 
-        // wakes on a broadcast or after 1 s, whichever comes first
-        if (poll(&pfd, 1, 1000) == -1) ewerror("main", NULL, "poll failed\n", 2);
+        // wakes on a broadcast, enter key in stdin, or after 1 s
+        if (poll(pfds, 2, 1000) == -1) ewerror("main", NULL, "poll failed\n", 2);
+
+        if (pfds[1].revents & (POLLIN | POLLHUP)) {
+            char line[64];
+            if (fgets(line, sizeof line, stdin) == NULL) {
+                // EOF (ctrl+d)
+                continue;
+            }
+            // TODO: handle cmds
+            draw_prompt();
+        }
 
         if (time(NULL) - lastHello >= BROADCAST_FREQ) {
             hello_i_exist(discSock, name, gamePort);

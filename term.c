@@ -70,6 +70,17 @@ void draw_peers(struct peer* peers, int peerCount) {
     showcur();
 }
 
+void draw_prompt() {
+
+    // fresh prompt on the fixed prompt row, clears anything below it
+    // leaves the cursor after "> "
+
+    jrc(PROMPT_ROW, 1);
+    cc2eos();
+    fputs("> ", stdout);
+    fflush(stdout);
+}
+
 void cls() {
     // clear screen
     printf("\x1b[2J");

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -28,6 +29,10 @@
 #define NAME_FIELD_SIZE (MAX_NAME_SIZE + 1) // so there's always at least 1 pad byte
 #define PORT_DIGITS_MAX 5
 #define DISCOVERY_MSG_MAX (MAGIC_SIZE + ID_SIZE + NAME_FIELD_SIZE + PORT_DIGITS_MAX)
+#define PORT_OFFSET (MAGIC_SIZE + ID_SIZE + NAME_FIELD_SIZE)
+
+#define BROADCAST_FREQ 2
+#define PEER_TIMEOUT 3 * BROADCAST_FREQ // seconds without a broadcast before a peer is dropped
 
 
 // random per run, used to spot our own broadcasts
@@ -62,11 +67,90 @@ int bind_game_port(int increment) {
 }
 
 
-int listen_for_peers(char** names, char** ips, char** ports, char** lastseens) {
-    // listen for broadcasts
-    // TODO
+int listen_for_peers(int sockfd, struct peer* peers, int* peerCount) {
 
-    
+    // read every queued broadcast on the discovery socket without blocking
+    // adds new peers, refreshes known ones (same ip + port)
+    // then drops peers not seen for PEER_TIMEOUT seconds
+
+    // returns 1 if the peer list changed, 0 if not
+    // returns -1 on poll / recv failure
+
+    int changed = 0;
+    struct pollfd pfd = { .fd = sockfd, .events = POLLIN };
+
+    // 0 timeout so poll returns right away, loop until the queue is empty
+    int r;
+    while ((r = poll(&pfd, 1, 0)) > 0 && (pfd.revents & POLLIN)) {
+
+        unsigned char buf[DISCOVERY_MSG_MAX];
+        struct sockaddr_in src;
+        socklen_t srcLen = sizeof src;
+        ssize_t n = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr*) &src, &srcLen);
+        if (n == -1) return -1;
+
+        // not from this program
+        if (memcmp(buf, MAGIC_SECRET, MAGIC_SIZE) != 0) continue;
+
+        // our own broadcast
+        uint16_t netId;
+        memcpy(&netId, buf + MAGIC_SIZE, ID_SIZE);
+        if (ntohs(netId) == sessionId) continue;
+
+        // get name
+        // pkcs7 so last byte is pad count
+        // note: not doing the full pkcs7 check on all padding bytes
+        unsigned char* nameField = buf + MAGIC_SIZE + ID_SIZE;
+        int nameLen = NAME_FIELD_SIZE - nameField[NAME_FIELD_SIZE - 1];
+
+        // get port (not null term'd)
+        char portStr[PORT_DIGITS_MAX + 1];
+        int portLen = n - PORT_OFFSET;
+        memcpy(portStr, buf + PORT_OFFSET, portLen);
+        portStr[portLen] = '\0';
+        int port = atoi(portStr);
+
+        // get IP from pkt
+        char ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &src.sin_addr, ip, sizeof ip);
+
+        // find a known peer, or append if there's room
+        int i;
+        for (i = 0; i < *peerCount; i++) {
+            if (sequal(peers[i].ip, ip) && peers[i].port == port) break;
+        }
+        if (i == *peerCount) {
+            // new peer
+
+            // no space, skip
+            if (*peerCount == MAX_PEERS) continue;
+
+            // add to list
+            strcpy(peers[i].ip, ip);
+            peers[i].port = port;
+            (*peerCount)++;
+        }
+
+        memcpy(peers[i].name, nameField, nameLen);
+        peers[i].name[nameLen] = '\0';
+        peers[i].lastSeen = time(NULL);
+        changed = 1;
+    }
+    if (r == -1) return -1;
+
+    // drop stale peers, shifting the rest down so the order stays the same
+    time_t now = time(NULL);
+    for (int i = 0; i < *peerCount; ) {
+        if (now - peers[i].lastSeen > PEER_TIMEOUT) {
+            memmove(&peers[i], &peers[i + 1], (*peerCount - i - 1) * sizeof *peers);
+            (*peerCount)--;
+            changed = 1;
+        } else {
+            i++;
+        }
+    }
+
+    return changed;
 }
 
 

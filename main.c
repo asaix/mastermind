@@ -66,10 +66,12 @@ int main(int argc, char* argv[])
             char line[64];
             if (fgets(line, sizeof line, stdin) == NULL) {
                 // EOF (ctrl+d)
-                continue;
+                // ignore and reset dirty
+                clearerr(stdin);
+            } else {
+                // TODO: handle cmds
+                draw_prompt();
             }
-            // TODO: handle cmds
-            draw_prompt();
         }
 
         if (time(NULL) - lastHello >= BROADCAST_FREQ) {

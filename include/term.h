@@ -3,7 +3,10 @@
 
 #define MAX_NAME_SIZE 15
 
+struct peer; // in comm.h
+
 char* name_entry();
+void draw_peers(struct peer* peers, int peerCount);
 
 // screen / cursor control
 void cls();

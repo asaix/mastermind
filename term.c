@@ -1,8 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "include/term.h"
+#include "include/comm.h"
+
+// home screen layout, the prompt row stays fixed below a MAX_PEERS tall table
+#define TITLE_ROW 1
+#define HEADER_ROW 2
+#define PEERS_FIRST_ROW 3
+#define DIVIDER_ROW (PEERS_FIRST_ROW + MAX_PEERS)
+#define PROMPT_ROW (DIVIDER_ROW + 1)
 
 char* name_entry() {
     char* name = malloc(MAX_NAME_SIZE * 2 * sizeof(char));
@@ -16,7 +25,50 @@ char* name_entry() {
 
     return name;
 
-}  
+}
+
+void draw_peers(struct peer* peers, int peerCount) {
+
+    time_t now = time(NULL);
+
+    hidecur();
+    savecur();
+
+    jrc(TITLE_ROW, 1);
+    bold("Players Online:");
+    rst();
+    cc2eol();
+
+    char header[64];
+    snprintf(header, sizeof header, "%-4s %-15s %-15s %-7s %s", "ID", "Name", "IP Addr", "Port", "Last Seen");
+    jrc(HEADER_ROW, 1);
+    bold(header);
+    rst();
+    cc2eol();
+
+
+    for (int i = 0; i < MAX_PEERS; i++) {
+        // jump to next row
+        jrc(PEERS_FIRST_ROW + i, 1);
+
+        // redraw row
+        if (i < peerCount) {
+            printf("%-4d %-15s %-15s %-7d %ld s. ago",
+                i + 1, peers[i].name, peers[i].ip, peers[i].port, (long) (now - peers[i].lastSeen));
+        }
+        // clear to end
+        // if peer was removed this clears the whole entry
+        cc2eol();
+    }
+
+    jrc(DIVIDER_ROW, 1);
+    dim("________________________________________________________");
+    rst();
+    cc2eol();
+
+    restorecur();
+    showcur();
+}
 
 void cls() {
     // clear screen

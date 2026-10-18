@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <stdint.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -20,11 +22,16 @@
 #define BASE_GAME_PORT 7000
 #define MAGIC_SECRET "LIES"
 
-// discovery packet: [magic][name, pkcs#7 padded][port as ascii digits]
+// discovery packet: [magic][session id, network order][name, pkcs#7 padded][port as ascii digits]
 #define MAGIC_SIZE 4
+#define ID_SIZE 2
 #define NAME_FIELD_SIZE (MAX_NAME_SIZE + 1) // so there's always at least 1 pad byte
 #define PORT_DIGITS_MAX 5
-#define DISCOVERY_MSG_MAX (MAGIC_SIZE + NAME_FIELD_SIZE + PORT_DIGITS_MAX)
+#define DISCOVERY_MSG_MAX (MAGIC_SIZE + ID_SIZE + NAME_FIELD_SIZE + PORT_DIGITS_MAX)
+
+
+// random per run, used to spot our own broadcasts
+static uint16_t sessionId;
 
 
 int bind_game_port(int increment) {
@@ -84,6 +91,10 @@ int init_discovery_sock() {
     // returns sockfd of socket bound to the discovery port
     // exits on failure
 
+    // pick session id, pid in the seed so instances started in the same second differ
+    srand(time(NULL) ^ getpid());
+    sessionId = rand() & 0xFFFF; // keep only lower 16 bits
+
     // init socket
     int sockfd;
     sockfd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -131,6 +142,11 @@ int hello_i_exist(int sockfd, char* name, int port) {
     memcpy(msg, MAGIC_SECRET, MAGIC_SIZE);
     msgLen += MAGIC_SIZE;
 
+    // session id
+    uint16_t netId = htons(sessionId);
+    memcpy(msg + msgLen, &netId, ID_SIZE);
+    msgLen += ID_SIZE;
+
     // PKCS#7 padding for name
     memcpy(msg + msgLen, name, nameLen);
     unsigned char pad = NAME_FIELD_SIZE - nameLen;
@@ -148,6 +164,7 @@ int hello_i_exist(int sockfd, char* name, int port) {
     broadcast_addr.sin_port = htons(DISCOVERY_PORT);
     broadcast_addr.sin_addr.s_addr = htonl(BROADCAST_ADDR);
 
+    // udp sends msgLen in the header so we don't have to attach it
     ssize_t sent = sendto(sockfd, msg, msgLen, 0, (struct sockaddr*) &broadcast_addr, sizeof broadcast_addr);
     if (sent != (ssize_t) msgLen) return -1;
 

@@ -31,7 +31,6 @@
 #define DISCOVERY_MSG_MAX (MAGIC_SIZE + ID_SIZE + NAME_FIELD_SIZE + PORT_DIGITS_MAX)
 #define PORT_OFFSET (MAGIC_SIZE + ID_SIZE + NAME_FIELD_SIZE)
 
-#define BROADCAST_FREQ 2
 #define PEER_TIMEOUT 3 * BROADCAST_FREQ // seconds without a broadcast before a peer is dropped
 
 

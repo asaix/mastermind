@@ -6,7 +6,8 @@
 
 #include "term.h"
 
-#define MAX_PEERS 32
+#define MAX_PEERS 10
+#define BROADCAST_FREQ 2 // seconds between discovery broadcasts
 
 struct peer {
     char name[MAX_NAME_SIZE + 1];

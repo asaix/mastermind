@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <netinet/in.h>
 
-// log line: <kind> <msg> <from ip:port> <to ip:port>
+// log line: <TCP|UDP> <kind> <msg> <from ip:port> <to ip:port>
 
 void log_init(bool enabled);
 void log_tcp(char* kind, int sockfd, char* data, size_t n);

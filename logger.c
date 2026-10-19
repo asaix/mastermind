@@ -66,7 +66,7 @@ static void addr_str(char* out, struct sockaddr_in* addr) {
 }
 
 
-static void write_line(char* kind, char* msg, char* from, char* to) {
+static void write_line(char* proto, char* kind, char* msg, char* from, char* to) {
 
     // timestamp code from the spec
 
@@ -78,7 +78,7 @@ static void write_line(char* kind, char* msg, char* from, char* to) {
     curtime = tv.tv_sec;
     strftime(time_buffer, 30, "%Y-%m-%d %H:%M:%S", localtime(&curtime));
 
-    fprintf(logFile, "[%s.%06ld] [LOG] %s %s %s %s\n", time_buffer, tv.tv_usec, kind, msg, from, to);
+    fprintf(logFile, "[%s.%06ld] [LOG] %s %s %s %s %s\n", time_buffer, tv.tv_usec, proto, kind, msg, from, to);
     fflush(logFile);
 }
 
@@ -99,8 +99,8 @@ static void tcp_line(char* kind, int sockfd, char* msg) {
 
     // incoming kinds flow peer -> us
     bool incoming = sequal(kind, "RECV") || sequal(kind, "ACCEPT");
-    if (incoming) write_line(kind, msg, peerStr, localStr);
-    else write_line(kind, msg, localStr, peerStr);
+    if (incoming) write_line("TCP", kind, msg, peerStr, localStr);
+    else write_line("TCP", kind, msg, localStr, peerStr);
 }
 
 
@@ -140,6 +140,6 @@ void log_udp(char* kind, int sockfd, char* data, size_t n, struct sockaddr_in* o
     addr_str(localStr, haveLocal ? &local : NULL);
     addr_str(otherStr, other);
 
-    if (sequal(kind, "RECV")) write_line(kind, esc, otherStr, localStr);
-    else write_line(kind, esc, localStr, otherStr);
+    if (sequal(kind, "RECV")) write_line("UDP", kind, esc, otherStr, localStr);
+    else write_line("UDP", kind, esc, localStr, otherStr);
 }

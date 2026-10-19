@@ -13,6 +13,7 @@ enum phase {
     SECRET,   // waiting for master to enter the master sequence
     GUESS,    // waiting for a guess from the codebreaker
     FEEDBACK, // waiting for us to type feedback for the latest guess
+    GAME_OVER, // revealed or disconnected
 };
 
 static int gameFd = -1; // -1 once the codebreaker has disconnected
@@ -33,8 +34,10 @@ static void disconnected() {
     close(gameFd);
     gameFd = -1;
 
+    phase = GAME_OVER;
+
     char status[STATUS_SIZE];
-    snprintf(status, sizeof status, "%s disconnected", opponent);
+    snprintf(status, sizeof status, "%s disconnected. Press enter to go home.", opponent);
     draw_status(status);
 }
 
@@ -54,11 +57,6 @@ static void handle_guesses() {
     while (phase == GUESS && xmsg(buf, &len, msg, sizeof msg)) {
         // check if it starts w GUESS:
         if (strncmp(msg, MSG_GUESS, strlen(MSG_GUESS)) != 0) continue;
-
-        if (count == MAX_ATTEMPTS) {
-            draw_status("out of attempts (TODO: end game)");
-            continue;
-        }
 
         snprintf(guesses[count], sizeof guesses[count], "%s", msg + strlen(MSG_GUESS));
         feedbacks[count][0] = '\0';
@@ -106,6 +104,24 @@ static void wait_guess() {
 }
 
 
+static void reveal() {
+
+    // reveal master seq
+    
+    char msg[MSG_BUF_SIZE];
+    snprintf(msg, sizeof msg, "%s%s", MSG_REVEAL, secret);
+    if (send_msg(gameFd, msg) == -1) {
+        disconnected();
+        return;
+    }
+
+    close(gameFd);
+    gameFd = -1;
+    phase = GAME_OVER;
+    draw_status("game over. press enter to go home");
+}
+
+
 static void feedback(char* line) {
 
     if (!valid_seq(line, "xo-")) {
@@ -121,21 +137,16 @@ static void feedback(char* line) {
     }
 
     snprintf(feedbacks[count - 1], sizeof feedbacks[count - 1], "%s", line);
-    phase = GUESS;
     draw_board(guesses, feedbacks, count, secret);
+
+    // cracked or out of attempts
+    if (sequal(line, "xxxxx") || count == MAX_ATTEMPTS) {
+        reveal();
+        return;
+    }
+
+    phase = GUESS;
     waiting_status();
-
-    // TODO: reveal() when line is xxxxx or count == MAX_ATTEMPTS
-}
-
-
-[[maybe_unused]] static void reveal() {
-
-    // only at the end of the game, the master sequence never goes out before this
-
-    char msg[MSG_BUF_SIZE];
-    snprintf(msg, sizeof msg, "%s%s", MSG_REVEAL, secret);
-    if (send_msg(gameFd, msg) == -1) disconnected();
 }
 
 

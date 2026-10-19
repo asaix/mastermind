@@ -13,12 +13,14 @@ enum phase {
     WAIT_SECRET,
     ENTER_GUESS,
     WAIT_FEEDBACK,
+    GAME_OVER,
 };
 
 static int gameFd = -1; // -1 after disconnect
 static char opponent[NAME_FIELD_SIZE];
 static enum phase phase;
 
+static char secret[SEQ_LEN + 1]; 
 static char guesses[MAX_ATTEMPTS][SEQ_LEN + 1];
 static char feedbacks[MAX_ATTEMPTS][SEQ_LEN + 1];
 static int count;
@@ -33,9 +35,10 @@ static void disconnected() {
 
     close(gameFd);
     gameFd = -1;
+    phase = GAME_OVER;
 
     char status[STATUS_SIZE];
-    snprintf(status, sizeof status, "%s disconnected", opponent);
+    snprintf(status, sizeof status, "%s disconnected. Press enter to go home.", opponent);
     draw_status(status);
 }
 
@@ -57,7 +60,7 @@ static void enter_guess(char* line) {
     // validate, send and record guess
 
     if (count == MAX_ATTEMPTS) {
-        draw_status("out of attempts (TODO: end game)");
+        draw_status("out of attempts");
         return;
     }
 
@@ -95,8 +98,18 @@ static void wait_feedback(char* msg) {
     snprintf(feedbacks[count - 1], sizeof feedbacks[count - 1], "%s", msg + strlen(MSG_FEEDBACK));
     phase = ENTER_GUESS;
     draw_board(guesses, feedbacks, count, NULL);
-    // TODO: reveal on xxxxx
     draw_status("enter your guess (5 digits)");
+}
+
+
+static void wait_reveal(char* msg) {
+
+    // show the code, game over
+
+    snprintf(secret, sizeof secret, "%s", msg + strlen(MSG_REVEAL));
+    phase = GAME_OVER;
+    draw_board(guesses, feedbacks, count, secret);
+    draw_status("game over. press enter to go home");
 }
 
 
@@ -108,6 +121,7 @@ void breaker_start(int sockfd, char* opponentName) {
     snprintf(opponent, sizeof opponent, "%s", opponentName);
     phase = WAIT_SECRET;
     count = 0;
+    secret[0] = '\0';
     len = 0;
     buf[0] = '\0';
 
@@ -145,14 +159,22 @@ void breaker_socket() {
     if (gameFd == -1) return;
 
     if (recv_into(gameFd, buf, &len) <= 0) {
-        disconnected();
+        // closed after REVEAL is normal
+        // else disconected
+        if (phase == GAME_OVER) {
+            close(gameFd);
+            gameFd = -1;
+        } else {
+            disconnected();
+        }
         return;
     }
 
     char msg[MSG_BUF_SIZE];
     // stop if disconnected mid-loop
     while (gameFd != -1 && xmsg(buf, &len, msg, sizeof msg)) {
-        if (phase == WAIT_SECRET) wait_secret(msg);
+        if (strncmp(msg, MSG_REVEAL, strlen(MSG_REVEAL)) == 0) wait_reveal(msg);
+        else if (phase == WAIT_SECRET) wait_secret(msg);
         else if (phase == WAIT_FEEDBACK) wait_feedback(msg);
     }
 }

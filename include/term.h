@@ -11,6 +11,8 @@ char* name_entry();
 void draw_peers(struct peer* peers, int peerCount);
 void draw_prompt();
 void draw_status(char* msg);
+void draw_error(char* msg);
+void draw_notice(char* msg);
 void draw_board(char guesses[][SEQ_LEN + 1], char feedback[][SEQ_LEN + 1], int count, char* secret);
 
 // screen / cursor control

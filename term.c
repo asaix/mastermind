@@ -24,6 +24,7 @@
 
 // store last status  so draw_prompt can put it back after clearing
 static char status[STATUS_SIZE] = "";
+static bool statusIsError = false; // red instead of cyan
 
 char* name_entry() {
     char* name = malloc(MAX_NAME_SIZE * 2 * sizeof(char));
@@ -82,6 +83,54 @@ void draw_peers(struct peer* peers, int peerCount) {
     showcur();
 }
 
+static void print_status() {
+    if (statusIsError) red(status);
+    else cyan(status);
+    rst();
+}
+
+static void show_status(char* msg, bool isError) {
+
+    snprintf(status, sizeof status, "%s", msg);
+    statusIsError = isError;
+
+    hidecur();
+    savecur();
+
+    jrc(STATUS_ROW, 1);
+    print_status();
+    cc2eol();
+
+    restorecur();
+    showcur();
+}
+
+void draw_status(char* msg) {
+    show_status(msg, false);
+}
+
+void draw_error(char* msg) {
+    show_status(msg, true);
+}
+
+void draw_notice(char* msg) {
+
+    // clear the board area and show msg on its first row instead
+
+    hidecur();
+    savecur();
+
+    for (int row = BOARD_FIRST_ROW; row <= BOARD_SECRET_ROW; row++) {
+        jrc(row, 1);
+        cc2eol();
+    }
+    jrc(BOARD_FIRST_ROW, 1);
+    fputs(msg, stdout);
+
+    restorecur();
+    showcur();
+}
+
 void draw_prompt() {
 
     // fresh prompt on the fixed prompt row, clears anything below it
@@ -92,32 +141,13 @@ void draw_prompt() {
     cc2eos();
 
     jrc(STATUS_ROW, 1);
-    cyan(status);
-    rst();
+    print_status();
 
     jrc(PROMPT_ROW, 1);
     fputs("> ", stdout);
     fflush(stdout);
 }
 
-void draw_status(char* msg) {
-
-    // replace the status line under the prompt, "" clears it
-    // cursor is put back where it was so typing at the prompt isn't touched
-
-    snprintf(status, sizeof status, "%s", msg);
-
-    hidecur();
-    savecur();
-
-    jrc(STATUS_ROW, 1);
-    cyan(status);
-    rst();
-    cc2eol();
-
-    restorecur();
-    showcur();
-}
 
 static void draw_feedback(char* fb) {
 

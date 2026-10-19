@@ -10,7 +10,14 @@
 #define HEADER_ROW 2
 #define PEERS_FIRST_ROW 3
 #define DIVIDER_ROW (PEERS_FIRST_ROW + MAX_PEERS)
-#define PROMPT_ROW (DIVIDER_ROW + 1)
+
+// game board: one row per attempt, then a divider, then the master sequence
+#define BOARD_FIRST_ROW 1
+#define BOARD_DIVIDER_ROW (BOARD_FIRST_ROW + MAX_ATTEMPTS)
+#define BOARD_SECRET_ROW (BOARD_DIVIDER_ROW + 1)
+
+// fixed 2 rows below the board (taller than the peer table), so the prompt doesn't move between screens
+#define PROMPT_ROW (BOARD_SECRET_ROW + 2)
 #define STATUS_ROW (PROMPT_ROW + 1)
 
 #define STATUS_SIZE 128
@@ -106,6 +113,53 @@ void draw_status(char* msg) {
     jrc(STATUS_ROW, 1);
     cyan(status);
     rst();
+    cc2eol();
+
+    restorecur();
+    showcur();
+}
+
+static void draw_feedback(char* fb) {
+
+    // x green, o yellow, - red
+
+    for (int i = 0; fb[i] != '\0'; i++) {
+        char c[2] = { fb[i], '\0' };
+        if (fb[i] == 'x') green(c);
+        else if (fb[i] == 'o') yellow(c);
+        else red(c);
+    }
+    rst();
+}
+
+void draw_board(char guesses[][SEQ_LEN + 1], char feedback[][SEQ_LEN + 1], int count, char* secret) {
+
+    // +1 for \0
+    
+    // redraw the game board in place above the prompt
+    // rows past count show *****, a guess still waiting for feedback has a blank feedback column
+    // secret NULL or "" shows ***** (codebreaker's view, or before it's set)
+
+    hidecur();
+    savecur();
+
+    for (int i = 0; i < MAX_ATTEMPTS; i++) {
+        jrc(BOARD_FIRST_ROW + i, 1);
+        if (i < count) {
+            printf("%s  ", guesses[i]);
+            draw_feedback(feedback[i]);
+        } else {
+            fputs("*****  *****", stdout);
+        }
+        cc2eol();
+    }
+
+    jrc(BOARD_DIVIDER_ROW, 1);
+    fputs("-----", stdout);
+    cc2eol();
+
+    jrc(BOARD_SECRET_ROW, 1);
+    fputs((secret != NULL && secret[0] != '\0') ? secret : "*****", stdout);
     cc2eol();
 
     restorecur();

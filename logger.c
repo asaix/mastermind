@@ -78,7 +78,7 @@ static void write_line(char* proto, char* kind, char* msg, char* from, char* to)
     curtime = tv.tv_sec;
     strftime(time_buffer, 30, "%Y-%m-%d %H:%M:%S", localtime(&curtime));
 
-    fprintf(logFile, "[%s.%06ld] [LOG] %s %s %s %s %s\n", time_buffer, tv.tv_usec, proto, kind, msg, from, to);
+    fprintf(logFile, "[%s.%06ld] [LOG] %s %s %s %s -> %s\n", time_buffer, tv.tv_usec, proto, kind, msg, from, to);
     fflush(logFile);
 }
 

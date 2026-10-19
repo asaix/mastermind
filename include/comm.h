@@ -21,7 +21,15 @@
 #define MSG_NAH "NAH"
 #define MSG_BUSY "BUSY"
 
-#define CHALLENGE_TIMEOUT 10 
+// game messages, also end with MSG_END
+//   codebreaker -> mastermind  GUESS:<guess>
+//   mastermind -> codebreaker  FEEDBACK:<feedback>
+//   mastermind -> codebreaker  REVEAL:<master sequence>
+#define MSG_GUESS "GUESS:"
+#define MSG_FEEDBACK "FEEDBACK:"
+#define MSG_REVEAL "REVEAL:"
+
+#define CHALLENGE_TIMEOUT 10
 #define MSG_BUF_SIZE 64
 
 struct peer {

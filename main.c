@@ -39,11 +39,11 @@ int main(int argc, char* argv[])
         }
     }
 
-    printf("[DEBUG] CostCutting: %d\n", costCutting);
-    printf("[DEBUG] LogOn: %d\n", logOn);
+    // printf("[DEBUG] CostCutting: %d\n", costCutting);
+    // printf("[DEBUG] LogOn: %d\n", logOn);
 
     char* name = name_entry();
-    printf("[DEBUG] Name: %s\n", name);
+    // printf("[DEBUG] Name: %s\n", name);
 
     int discSock = init_discovery_sock();
     int gameSock = bind_game_port(0);

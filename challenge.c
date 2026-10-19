@@ -23,7 +23,7 @@ struct conn {
 static enum mode mode = IDLE;
 static struct conn active;
 static time_t started;
-static char peerName[MAX_NAME_SIZE + 1];
+static char peerName[NAME_FIELD_SIZE];
 static int peerPort;
 
 // connections that come in while we're busy, they get WHO ARE YOU then BUSY

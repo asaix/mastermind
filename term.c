@@ -6,12 +6,17 @@
 #include "include/term.h"
 #include "include/comm.h"
 
-// home screen layout, the prompt row stays fixed below a MAX_PEERS tall table
 #define TITLE_ROW 1
 #define HEADER_ROW 2
 #define PEERS_FIRST_ROW 3
 #define DIVIDER_ROW (PEERS_FIRST_ROW + MAX_PEERS)
 #define PROMPT_ROW (DIVIDER_ROW + 1)
+#define STATUS_ROW (PROMPT_ROW + 1)
+
+#define STATUS_SIZE 128
+
+// store last status  so draw_prompt can put it back after clearing
+static char status[STATUS_SIZE] = "";
 
 char* name_entry() {
     char* name = malloc(MAX_NAME_SIZE * 2 * sizeof(char));
@@ -73,12 +78,38 @@ void draw_peers(struct peer* peers, int peerCount) {
 void draw_prompt() {
 
     // fresh prompt on the fixed prompt row, clears anything below it
+    // then puts the status line back under it
     // leaves the cursor after "> "
 
     jrc(PROMPT_ROW, 1);
     cc2eos();
+
+    jrc(STATUS_ROW, 1);
+    cyan(status);
+    rst();
+
+    jrc(PROMPT_ROW, 1);
     fputs("> ", stdout);
     fflush(stdout);
+}
+
+void draw_status(char* msg) {
+
+    // replace the status line under the prompt, "" clears it
+    // cursor is put back where it was so typing at the prompt isn't touched
+
+    snprintf(status, sizeof status, "%s", msg);
+
+    hidecur();
+    savecur();
+
+    jrc(STATUS_ROW, 1);
+    cyan(status);
+    rst();
+    cc2eol();
+
+    restorecur();
+    showcur();
 }
 
 void cls() {

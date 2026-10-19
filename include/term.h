@@ -8,6 +8,7 @@ struct peer; // in comm.h
 char* name_entry();
 void draw_peers(struct peer* peers, int peerCount);
 void draw_prompt();
+void draw_status(char* msg);
 
 // screen / cursor control
 void cls();

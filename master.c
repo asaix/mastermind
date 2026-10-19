@@ -15,21 +15,21 @@ enum phase {
     FEEDBACK, // waiting for us to type feedback for the latest guess
 };
 
-int gameFd = -1; // -1 once the codebreaker has disconnected
-char opponent[NAME_FIELD_SIZE];
-enum phase phase;
+static int gameFd = -1; // -1 once the codebreaker has disconnected
+static char opponent[NAME_FIELD_SIZE];
+static enum phase phase;
 
-char secret[SEQ_LEN + 1];
-char guesses[MAX_ATTEMPTS][SEQ_LEN + 1];
-char feedbacks[MAX_ATTEMPTS][SEQ_LEN + 1];
-int count; // guesses received
+static char secret[SEQ_LEN + 1];
+static char guesses[MAX_ATTEMPTS][SEQ_LEN + 1];
+static char feedbacks[MAX_ATTEMPTS][SEQ_LEN + 1];
+static int count; // guesses received
 
 // bytes from codebreaker, may be in disconnected byte stream
-char buf[MSG_BUF_SIZE];
-size_t len;
+static char buf[MSG_BUF_SIZE];
+static size_t len;
 
 
-void disconnected() {
+static void disconnected() {
     close(gameFd);
     gameFd = -1;
 
@@ -39,14 +39,14 @@ void disconnected() {
 }
 
 
-void waiting_status() {
+static void waiting_status() {
     char status[STATUS_SIZE];
     snprintf(status, sizeof status, "waiting for %s's guess", opponent);
     draw_status(status);
 }
 
 
-void handle_guesses() {
+static void handle_guesses() {
 
     // take the next complete guess out of buf, if one has arrived and we're waiting for it
 
@@ -73,7 +73,7 @@ void handle_guesses() {
 }
 
 
-void set_secret(char* line) {
+static void set_secret(char* line) {
 
     if (!valid_seq(line, "0123456789")) {
         draw_status("the master sequence must be exactly 5 digits");
@@ -94,7 +94,7 @@ void set_secret(char* line) {
 }
 
 
-void wait_guess() {
+static void wait_guess() {
 
     // the socket is readable: buffer what came in, handle it if we're waiting for a guess
 
@@ -106,7 +106,7 @@ void wait_guess() {
 }
 
 
-void feedback(char* line) {
+static void feedback(char* line) {
 
     if (!valid_seq(line, "xo-")) {
         draw_status("feedback must be exactly 5 of x o -");
@@ -129,7 +129,7 @@ void feedback(char* line) {
 }
 
 
-void reveal() {
+static void reveal() {
 
     // only at the end of the game, the master sequence never goes out before this
 

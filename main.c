@@ -42,6 +42,8 @@ int main(int argc, char* argv[])
 
     log_init(logOn);
 
+    if (costCutting) fprintf(stderr, "cost cutting not implemented\n");
+
     // printf("[DEBUG] CostCutting: %d\n", costCutting);
     // printf("[DEBUG] LogOn: %d\n", logOn);
 

@@ -125,15 +125,21 @@ void log_tcp_note(char* kind, int sockfd, char* note) {
 }
 
 
-void log_udp(char* kind, char* data, size_t n, struct sockaddr_in* from, struct sockaddr_in* to) {
+void log_udp(char* kind, int sockfd, char* data, size_t n, struct sockaddr_in* other) {
 
-    // a discovery datagram
+    // a discovery datagram, other is its sender or destination
 
     if (logFile == NULL) return;
 
-    char esc[ESC_SIZE], fromStr[ADDR_SIZE], toStr[ADDR_SIZE];
+    struct sockaddr_in local;
+    socklen_t len = sizeof local;
+    bool haveLocal = getsockname(sockfd, (struct sockaddr*) &local, &len) == 0;
+
+    char esc[ESC_SIZE], localStr[ADDR_SIZE], otherStr[ADDR_SIZE];
     escape(esc, data, n);
-    addr_str(fromStr, from);
-    addr_str(toStr, to);
-    write_line(kind, esc, fromStr, toStr);
+    addr_str(localStr, haveLocal ? &local : NULL);
+    addr_str(otherStr, other);
+
+    if (sequal(kind, "RECV")) write_line(kind, esc, otherStr, localStr);
+    else write_line(kind, esc, localStr, otherStr);
 }

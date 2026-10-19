@@ -93,6 +93,7 @@ int listen_for_peers(int sockfd, struct peer* peers, int* peerCount) {
         socklen_t srcLen = sizeof src;
         ssize_t n = recvfrom(sockfd, buf, sizeof buf, 0, (struct sockaddr*) &src, &srcLen);
         if (n == -1) return -1;
+        log_udp("RECV", sockfd, (char*) buf, n, &src);
 
         // not from this program
         if (memcmp(buf, MAGIC_SECRET, MAGIC_SIZE) != 0) continue;
@@ -257,6 +258,7 @@ int hello_i_exist(int sockfd, char* name, int port) {
     ssize_t sent = sendto(sockfd, msg, msgLen, 0, (struct sockaddr*) &broadcast_addr, sizeof broadcast_addr);
     if (sent != (ssize_t) msgLen) return -1;
 
+    log_udp("SEND", sockfd, msg, msgLen, &broadcast_addr);
     return 0;
 }
 

@@ -6,6 +6,9 @@
 
 #include "term.h"
 
+#define NAME_FIELD_SIZE (MAX_NAME_SIZE + 1) // so there's always at least 1 pad byte
+
+
 #define MAX_PEERS 10
 #define BROADCAST_FREQ 2 // seconds between discovery broadcasts
 
@@ -33,7 +36,7 @@
 #define MSG_BUF_SIZE 64
 
 struct peer {
-    char name[MAX_NAME_SIZE + 1];
+    char name[NAME_FIELD_SIZE];
     char ip[INET_ADDRSTRLEN];
     int port;
     time_t lastSeen;

@@ -26,7 +26,6 @@
 // discovery packet: [magic][session id, network order][name, pkcs#7 padded][port as ascii digits]
 #define MAGIC_SIZE 4
 #define ID_SIZE 2
-#define NAME_FIELD_SIZE (MAX_NAME_SIZE + 1) // so there's always at least 1 pad byte
 #define PORT_DIGITS_MAX 5
 #define DISCOVERY_MSG_MAX (MAGIC_SIZE + ID_SIZE + NAME_FIELD_SIZE + PORT_DIGITS_MAX)
 #define PORT_OFFSET (MAGIC_SIZE + ID_SIZE + NAME_FIELD_SIZE)

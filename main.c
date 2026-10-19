@@ -55,8 +55,8 @@ int main(int argc, char* argv[])
 
     challenge_init(gameSock, name, gamePort);
 
-    // -1 until a handshake hands us a game
-    int gameFd = -1;
+    // game screen shown, even after disconnect
+    bool inGame = false;
     bool isMaster = false;
     char opponent[NAME_FIELD_SIZE];
 
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
         // the game socket while we're in a game and it's still open
         int gameIdx = -1;
         int sideFd = isMaster ? master_fd() : breaker_fd();
-        if (gameFd != -1 && sideFd != -1) {
+        if (sideFd != -1) {
             gameIdx = pfd_add(&pfds, &pfdsCap, &nfds, sideFd, POLLIN);
         }
 
@@ -99,8 +99,8 @@ int main(int argc, char* argv[])
                 // ignore and reset dirty
                 clearerr(stdin);
             } else {
-                if (gameFd != -1 && isMaster) master_input(line);
-                else if (gameFd != -1) breaker_input(line);
+                if (inGame && isMaster) master_input(line);
+                else if (inGame) breaker_input(line);
                 else challenge_handle_input(line, peers, peerCount);
                 draw_prompt();
             }
@@ -111,11 +111,11 @@ int main(int argc, char* argv[])
         // hs ok: load game screen
         int newGame = challenge_game_started(opponent, &isMaster);
         if (newGame != -1) {
-            gameFd = newGame;
+            inGame = true;
             cls();
             draw_prompt();
-            if (isMaster) master_start(gameFd, opponent);
-            else breaker_start(gameFd, opponent);
+            if (isMaster) master_start(newGame, opponent);
+            else breaker_start(newGame, opponent);
         }
 
         if (time(NULL) - lastHello >= BROADCAST_FREQ) {
@@ -127,6 +127,6 @@ int main(int argc, char* argv[])
             ewerror("main", NULL, "failed to listen for peers\n", 2);
         }
 
-        if (gameFd == -1) draw_peers(peers, peerCount);
+        if (!inGame) draw_peers(peers, peerCount);
     }
 }

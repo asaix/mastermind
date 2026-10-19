@@ -7,6 +7,7 @@
 #include "include/utils.h"
 #include "include/term.h"
 #include "include/comm.h"
+#include "include/challenge.h"
 
 // err 1: generic error
 // err 2: network error
@@ -50,17 +51,25 @@ int main(int argc, char* argv[])
     int peerCount = 0;
     time_t lastHello = 0; // 0 so the first broadcast goes out immediately
 
+    challenge_init(gameSock, name, gamePort);
+
     cls();
     draw_prompt();
 
-    struct pollfd pfds[2] = {
-        { .fd = discSock, .events = POLLIN },
-        { .fd = STDIN_FILENO, .events = POLLIN },
-    };
+    // rebuilt every pass since challenge connections come and go
+    struct pollfd* pfds = NULL;
+    size_t pfdsCap = 0;
     while (true) {
 
-        // wakes on a broadcast, enter key in stdin, or after 1 s
-        if (poll(pfds, 2, 1000) == -1) ewerror("main", NULL, "poll failed\n", 2);
+        int nfds = challenge_build_pollfds(&pfds, &pfdsCap, 2);
+        pfds[0] = (struct pollfd) { .fd = discSock, .events = POLLIN };
+        pfds[1] = (struct pollfd) { .fd = STDIN_FILENO, .events = POLLIN };
+
+        // wakes on a broadcast, enter key in stdin, challenge traffic, or after 1 s
+        if (poll(pfds, nfds, 1000) == -1) ewerror("main", NULL, "poll failed\n", 2);
+
+        // before stdin, so a connection opened by a typed command never sees this pass's revents
+        challenge_handle_events(pfds, 2, nfds);
 
         if (pfds[1].revents & (POLLIN | POLLHUP)) {
             char line[64];
@@ -69,10 +78,12 @@ int main(int argc, char* argv[])
                 // ignore and reset dirty
                 clearerr(stdin);
             } else {
-                // TODO: handle cmds
+                challenge_handle_input(line, peers, peerCount);
                 draw_prompt();
             }
         }
+
+        challenge_check_timeout();
 
         if (time(NULL) - lastHello >= BROADCAST_FREQ) {
             hello_i_exist(discSock, name, gamePort);

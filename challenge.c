@@ -10,6 +10,7 @@
 #include "include/term.h"
 #include "include/comm.h"
 #include "include/challenge.h"
+#include "include/logger.h"
 
 #define STATUS_SIZE 96
 
@@ -53,7 +54,7 @@ static void back_to_idle(char* msg) {
 
     // drop the active connection and stop being busy
 
-    close(active.fd);
+    close_conn(active.fd);
     active.fd = -1;
     mode = IDLE;
     draw_status(msg);
@@ -64,6 +65,7 @@ static void handle_accept() {
 
     int fd = accept(listenSock, NULL, NULL);
     if (fd == -1) return;
+    log_tcp_note("ACCEPT", fd, "-");
 
     if (mode == IDLE) {
         // this one becomes the active handshake, busy from here on
@@ -77,7 +79,7 @@ static void handle_accept() {
     }
 
     if (send_msg(fd, MSG_WHO) == -1) {
-        close(fd);
+        close_conn(fd);
         return;
     }
 
@@ -178,7 +180,7 @@ static void handle_active() {
     }
 
     char msg[MSG_BUF_SIZE];
-    while (mode != IDLE && xmsg(active.buf, &active.len, msg, sizeof msg)) {
+    while (mode != IDLE && xmsg(active.fd, active.buf, &active.len, msg, sizeof msg)) {
         if (mode == WAIT_ID) handle_id(msg);
         else if (mode == WAIT_WHO) handle_who(msg);
         else if (mode == WAIT_REPLY) handle_reply(msg);
@@ -195,10 +197,10 @@ static void handle_extra(int i) {
     char msg[MSG_BUF_SIZE];
 
     int r = recv_into(c->fd, c->buf, &c->len);
-    if (r == 1 && !xmsg(c->buf, &c->len, msg, sizeof msg)) return;
+    if (r == 1 && !xmsg(c->fd, c->buf, &c->len, msg, sizeof msg)) return;
     if (r == 1) send_msg(c->fd, MSG_BUSY);
 
-    close(c->fd);
+    close_conn(c->fd);
     extras[i] = extras[extraCount - 1];
     extraCount--;
 }

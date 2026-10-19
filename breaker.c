@@ -33,7 +33,7 @@ static void disconnected() {
 
     // close socket, show disconnected
 
-    close(gameFd);
+    close_conn(gameFd);
     gameFd = -1;
     phase = GAME_OVER;
 
@@ -141,7 +141,7 @@ bool breaker_input(char* line) {
     line[strcspn(line, "\n")] = '\0';
     if (phase == GAME_OVER) {
         // EOF may not have arrived
-        if (gameFd != -1) close(gameFd);
+        if (gameFd != -1) close_conn(gameFd);
         gameFd = -1;
         return true;
     }
@@ -170,7 +170,7 @@ void breaker_socket() {
         // closed after REVEAL is normal
         // else disconected
         if (phase == GAME_OVER) {
-            close(gameFd);
+            close_conn(gameFd);
             gameFd = -1;
         } else {
             disconnected();
@@ -180,7 +180,7 @@ void breaker_socket() {
 
     char msg[MSG_BUF_SIZE];
     // stop if disconnected mid-loop
-    while (gameFd != -1 && xmsg(buf, &len, msg, sizeof msg)) {
+    while (gameFd != -1 && xmsg(gameFd, buf, &len, msg, sizeof msg)) {
         if (strncmp(msg, MSG_REVEAL, strlen(MSG_REVEAL)) == 0) wait_reveal(msg);
         else if (phase == WAIT_SECRET) wait_secret(msg);
         else if (phase == WAIT_FEEDBACK) wait_feedback(msg);

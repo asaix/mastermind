@@ -16,6 +16,7 @@
 #include "include/utils.h"
 #include "include/term.h"
 #include "include/comm.h"
+#include "include/logger.h"
 
 
 #define BROADCAST_ADDR INADDR_BROADCAST
@@ -296,6 +297,8 @@ int finish_connect(int sockfd) {
     socklen_t len = sizeof err;
     int r = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &err, &len);
     if (r == -1 || err != 0) return -1;
+
+    log_tcp_note("CONNECT", sockfd, "-");
     return 0;
 }
 
@@ -316,6 +319,7 @@ int send_msg(int sockfd, char* body) {
         sentTotal += sent;
     }
 
+    log_tcp("SEND", sockfd, msg, msgLen);
     return 0;
 }
 
@@ -333,7 +337,10 @@ int recv_into(int sockfd, char* buf, size_t* len) {
 
     ssize_t n = recv(sockfd, buf + *len, room, 0);
     if (n == -1) return -1;
-    if (n == 0) return 0;
+    if (n == 0) {
+        log_tcp_note("RECV", sockfd, "<EOF>");
+        return 0;
+    }
 
     *len += n;
     buf[*len] = '\0';
@@ -341,7 +348,7 @@ int recv_into(int sockfd, char* buf, size_t* len) {
 }
 
 
-int xmsg(char* buf, size_t* len, char* out, size_t outSize) {
+int xmsg(int sockfd, char* buf, size_t* len, char* out, size_t outSize) {
 
     // take the first complete message out of buf, without its MSG_END
     // whatever comes after it is kept at the front of buf
@@ -353,6 +360,8 @@ int xmsg(char* buf, size_t* len, char* out, size_t outSize) {
     if (end == NULL) return 0;
 
     size_t msgLen = end - buf;
+    log_tcp("RECV", sockfd, buf, msgLen + MSG_END_LEN);
+
     size_t copyLen = msgLen < outSize - 1 ? msgLen : outSize - 1;
     memcpy(out, buf, copyLen);
     out[copyLen] = '\0';
@@ -364,4 +373,13 @@ int xmsg(char* buf, size_t* len, char* out, size_t outSize) {
     buf[*len] = '\0';
 
     return 1;
+}
+
+
+void close_conn(int sockfd) {
+
+    // log, then close
+
+    log_tcp_note("CLOSE", sockfd, "-");
+    close(sockfd);
 }

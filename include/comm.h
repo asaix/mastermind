@@ -57,5 +57,6 @@ int start_connect(char* ip, int port);
 int finish_connect(int sockfd);
 int send_msg(int sockfd, char* body);
 int recv_into(int sockfd, char* buf, size_t* len);
-int xmsg(char* buf, size_t* len, char* out, size_t outSize);
+int xmsg(int sockfd, char* buf, size_t* len, char* out, size_t outSize);
+void close_conn(int sockfd);
 #endif

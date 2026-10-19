@@ -31,7 +31,7 @@ static size_t len;
 
 
 static void disconnected() {
-    close(gameFd);
+    close_conn(gameFd);
     gameFd = -1;
 
     phase = GAME_OVER;
@@ -54,7 +54,7 @@ static void handle_guesses() {
     // take the next complete guess out of buf, if one has arrived and we're waiting for it
 
     char msg[MSG_BUF_SIZE];
-    while (phase == GUESS && xmsg(buf, &len, msg, sizeof msg)) {
+    while (phase == GUESS && xmsg(gameFd, buf, &len, msg, sizeof msg)) {
         // check if it starts w GUESS:
         if (strncmp(msg, MSG_GUESS, strlen(MSG_GUESS)) != 0) continue;
 
@@ -115,7 +115,7 @@ static void reveal() {
         return;
     }
 
-    close(gameFd);
+    close_conn(gameFd);
     gameFd = -1;
     phase = GAME_OVER;
     draw_status("game over. press enter to go home");

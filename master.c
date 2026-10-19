@@ -129,7 +129,7 @@ static void feedback(char* line) {
 }
 
 
-static void reveal() {
+[[maybe_unused]] static void reveal() {
 
     // only at the end of the game, the master sequence never goes out before this
 
@@ -152,6 +152,8 @@ void master_start(int sockfd, char* opponentName) {
     len = 0;
     buf[0] = '\0';
 
+    // replace the status line under the prompt, "" clears it
+    // cursor is put back where it was so typing at the prompt isn't touched
     draw_board(guesses, feedbacks, count, secret);
     draw_status("enter the master sequence (5 digits)");
 }

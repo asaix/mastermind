@@ -9,6 +9,7 @@
 #include "include/comm.h"
 #include "include/challenge.h"
 #include "include/master.h"
+#include "include/breaker.h"
 
 // err 1: generic error
 // err 2: network error
@@ -71,10 +72,11 @@ int main(int argc, char* argv[])
         pfd_add(&pfds, &pfdsCap, &nfds, discSock, POLLIN); // listen_for_peers drains it itself
         int stdinIdx = pfd_add(&pfds, &pfdsCap, &nfds, STDIN_FILENO, POLLIN);
 
-        // the game socket while we're the mastermind and it's still open
+        // the game socket while we're in a game and it's still open
         int gameIdx = -1;
-        if (gameFd != -1 && isMaster && master_fd() != -1) {
-            gameIdx = pfd_add(&pfds, &pfdsCap, &nfds, master_fd(), POLLIN);
+        int sideFd = isMaster ? master_fd() : breaker_fd();
+        if (gameFd != -1 && sideFd != -1) {
+            gameIdx = pfd_add(&pfds, &pfdsCap, &nfds, sideFd, POLLIN);
         }
 
         int challengeFrom = nfds;
@@ -85,7 +87,10 @@ int main(int argc, char* argv[])
 
         // before stdin, so a connection opened by a typed command never sees this pass's revents
         challenge_handle_events(pfds, challengeFrom, nfds);
-        if (gameIdx != -1 && pfds[gameIdx].revents != 0) master_socket();
+        if (gameIdx != -1 && pfds[gameIdx].revents != 0) {
+            if (isMaster) master_socket();
+            else breaker_socket();
+        }
 
         if (pfds[stdinIdx].revents & (POLLIN | POLLHUP)) {
             char line[64];
@@ -95,6 +100,7 @@ int main(int argc, char* argv[])
                 clearerr(stdin);
             } else {
                 if (gameFd != -1 && isMaster) master_input(line);
+                else if (gameFd != -1) breaker_input(line);
                 else challenge_handle_input(line, peers, peerCount);
                 draw_prompt();
             }
@@ -109,7 +115,7 @@ int main(int argc, char* argv[])
             cls();
             draw_prompt();
             if (isMaster) master_start(gameFd, opponent);
-            // TODO: breaker side
+            else breaker_start(gameFd, opponent);
         }
 
         if (time(NULL) - lastHello >= BROADCAST_FREQ) {

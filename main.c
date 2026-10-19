@@ -131,7 +131,8 @@ int main(int argc, char* argv[])
             else breaker_start(newGame, opponent);
         }
 
-        if (time(NULL) - lastHello >= BROADCAST_FREQ) {
+        // silent in game, still listening
+        if (!inGame && time(NULL) - lastHello >= BROADCAST_FREQ) {
             hello_i_exist(discSock, name, gamePort);
             lastHello = time(NULL);
         }

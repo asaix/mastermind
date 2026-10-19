@@ -31,7 +31,7 @@
 #define DISCOVERY_MSG_MAX (MAGIC_SIZE + ID_SIZE + NAME_FIELD_SIZE + PORT_DIGITS_MAX)
 #define PORT_OFFSET (MAGIC_SIZE + ID_SIZE + NAME_FIELD_SIZE)
 
-#define PEER_TIMEOUT 3 * BROADCAST_FREQ // seconds without a broadcast before a peer is dropped
+#define PEER_TIMEOUT 5 // seconds without a broadcast before a peer is dropped
 
 #define LISTEN_BACKLOG 8
 
@@ -147,7 +147,7 @@ int listen_for_peers(int sockfd, struct peer* peers, int* peerCount) {
     // drop stale peers, shifting the rest down so the order stays the same
     time_t now = time(NULL);
     for (int i = 0; i < *peerCount; ) {
-        if (now - peers[i].lastSeen > PEER_TIMEOUT) {
+        if (now - peers[i].lastSeen >= PEER_TIMEOUT) {
             memmove(&peers[i], &peers[i + 1], (*peerCount - i - 1) * sizeof *peers);
             (*peerCount)--;
             changed = 1;

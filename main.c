@@ -10,6 +10,7 @@
 #include "include/challenge.h"
 #include "include/master.h"
 #include "include/breaker.h"
+#include "include/logger.h"
 
 // err 1: generic error
 // err 2: network error
@@ -38,6 +39,8 @@ int main(int argc, char* argv[])
             ewerror(NULL, NULL, "invalid argument(s)\n", 1);
         }
     }
+
+    log_init(logOn);
 
     // printf("[DEBUG] CostCutting: %d\n", costCutting);
     // printf("[DEBUG] LogOn: %d\n", logOn);

@@ -8,6 +8,7 @@
 #include "include/term.h"
 #include "include/comm.h"
 #include "include/challenge.h"
+#include "include/master.h"
 
 // err 1: generic error
 // err 2: network error
@@ -66,24 +67,35 @@ int main(int argc, char* argv[])
     size_t pfdsCap = 0;
     while (true) {
 
-        int nfds = challenge_build_pollfds(&pfds, &pfdsCap, 2);
-        pfds[0] = (struct pollfd) { .fd = discSock, .events = POLLIN };
-        pfds[1] = (struct pollfd) { .fd = STDIN_FILENO, .events = POLLIN };
+        int nfds = 0;
+        pfd_add(&pfds, &pfdsCap, &nfds, discSock, POLLIN); // listen_for_peers drains it itself
+        int stdinIdx = pfd_add(&pfds, &pfdsCap, &nfds, STDIN_FILENO, POLLIN);
 
-        // wakes on a broadcast, enter key in stdin, challenge traffic, or after 1 s
+        // the game socket while we're the mastermind and it's still open
+        int gameIdx = -1;
+        if (gameFd != -1 && isMaster && master_fd() != -1) {
+            gameIdx = pfd_add(&pfds, &pfdsCap, &nfds, master_fd(), POLLIN);
+        }
+
+        int challengeFrom = nfds;
+        challenge_add_pollfds(&pfds, &pfdsCap, &nfds);
+
+        // wakes on a broadcast, enter key in stdin, challenge or game traffic, or after 1 s
         if (poll(pfds, nfds, 1000) == -1) ewerror("main", NULL, "poll failed\n", 2);
 
         // before stdin, so a connection opened by a typed command never sees this pass's revents
-        challenge_handle_events(pfds, 2, nfds);
+        challenge_handle_events(pfds, challengeFrom, nfds);
+        if (gameIdx != -1 && pfds[gameIdx].revents != 0) master_socket();
 
-        if (pfds[1].revents & (POLLIN | POLLHUP)) {
+        if (pfds[stdinIdx].revents & (POLLIN | POLLHUP)) {
             char line[64];
             if (fgets(line, sizeof line, stdin) == NULL) {
                 // EOF (ctrl+d)
                 // ignore and reset dirty
                 clearerr(stdin);
             } else {
-                challenge_handle_input(line, peers, peerCount);
+                if (gameFd != -1 && isMaster) master_input(line);
+                else challenge_handle_input(line, peers, peerCount);
                 draw_prompt();
             }
         }
@@ -96,7 +108,8 @@ int main(int argc, char* argv[])
             gameFd = newGame;
             cls();
             draw_prompt();
-            // TODO: master_start(gameFd, opponent) if isMaster, breaker side otherwise
+            if (isMaster) master_start(gameFd, opponent);
+            // TODO: breaker side
         }
 
         if (time(NULL) - lastHello >= BROADCAST_FREQ) {

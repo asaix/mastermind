@@ -4,6 +4,7 @@
 #include <poll.h>
 
 #include "include/utils.h"
+#include "include/term.h"
 
 bool sequal(char* s1, char*s2) {
     if (strcmp(s1, s2) == 0) return true;
@@ -37,4 +38,16 @@ int pfd_add(struct pollfd** pfds, size_t* cap, int* n, int fd, short events) {
 
     (*pfds)[*n] = (struct pollfd) { .fd = fd, .events = events };
     return (*n)++;
+}
+
+
+bool valid_seq(char* s, char* allowed) {
+
+    // exactly SEQ_LEN chars, all from allowed
+
+    if (strlen(s) != SEQ_LEN) return false;
+    for (int i = 0; i < SEQ_LEN; i++) {
+        if (strchr(allowed, s[i]) == NULL) return false;
+    }
+    return true;
 }

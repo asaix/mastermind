@@ -25,9 +25,11 @@
 #define MSG_BUSY "BUSY"
 
 // game messages, also end with MSG_END
+//   mastermind -> codebreaker  READY                      (master sequence set, guesses allowed from now)
 //   codebreaker -> mastermind  GUESS:<guess>
 //   mastermind -> codebreaker  FEEDBACK:<feedback>
 //   mastermind -> codebreaker  REVEAL:<master sequence>
+#define MSG_READY "READY"
 #define MSG_GUESS "GUESS:"
 #define MSG_FEEDBACK "FEEDBACK:"
 #define MSG_REVEAL "REVEAL:"

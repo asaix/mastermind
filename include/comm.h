@@ -9,6 +9,21 @@
 #define MAX_PEERS 10
 #define BROADCAST_FREQ 2 // seconds between discovery broadcasts
 
+// challenge handshake format
+//   B -> A  WHO ARE YOU
+//   A -> B  <name>\r\n<port>
+//   B -> A  OK | NAH | BUSY
+#define MSG_END "\r\n\r\n"
+#define MSG_END_LEN 4
+#define MSG_SEP "\r\n" // between fields inside a message
+#define MSG_WHO "WHO ARE YOU"
+#define MSG_OK "OK"
+#define MSG_NAH "NAH"
+#define MSG_BUSY "BUSY"
+
+#define CHALLENGE_TIMEOUT 10 
+#define MSG_BUF_SIZE 64
+
 struct peer {
     char name[MAX_NAME_SIZE + 1];
     char ip[INET_ADDRSTRLEN];
@@ -24,4 +39,10 @@ int init_discovery_sock();
 int hello_i_exist(int sockfd, char* name, int port);
 int listen_for_peers(int sockfd, struct peer* peers, int* peerCount);
 
+// tcp challenge
+int start_connect(char* ip, int port);
+int finish_connect(int sockfd);
+int send_msg(int sockfd, char* body);
+int recv_into(int sockfd, char* buf, size_t* len);
+int xmsg(char* buf, size_t* len, char* out, size_t outSize);
 #endif

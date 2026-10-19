@@ -33,6 +33,8 @@
 
 #define PEER_TIMEOUT 3 * BROADCAST_FREQ // seconds without a broadcast before a peer is dropped
 
+#define LISTEN_BACKLOG 8
+
 
 // random per run, used to spot our own broadcasts
 static uint16_t sessionId;
@@ -58,11 +60,15 @@ int bind_game_port(int increment) {
     myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     memset(myaddr.sin_zero, '\0', sizeof myaddr.sin_zero);
 
-    // recursively bind w increment and return sockfd
+    // recursively bind w increment, then listen and return sockfd
     int r = bind(sockfd, (struct sockaddr*) &myaddr, sizeof myaddr);
-    if (r == 0) return sockfd;
-    else if (errno == EADDRINUSE) return bind_game_port(increment+1);
-    else ewerror("comm", "bind_game_port", "failed to bind to socket", 2);
+    if (r == -1 && errno == EADDRINUSE) return bind_game_port(increment+1);
+    if (r == -1) ewerror("comm", "bind_game_port", "failed to bind to socket", 2);
+
+    r = listen(sockfd, LISTEN_BACKLOG);
+    if (r == -1) ewerror("comm", "bind_game_port", "failed to listen on socket", 2);
+
+    return sockfd;
 }
 
 
@@ -252,4 +258,111 @@ int hello_i_exist(int sockfd, char* name, int port) {
     if (sent != (ssize_t) msgLen) return -1;
 
     return 0;
+}
+
+int start_connect(char* ip, int port) {
+
+    // start NB tcp conn
+
+    // returns sockfd (connecting or already connected)
+    // -1 on failure
+
+    int sockfd = socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    if (sockfd == -1) return -1;
+
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof addr);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    if (inet_pton(AF_INET, ip, &addr.sin_addr) != 1) return -1;
+
+    int r = connect(sockfd, (struct sockaddr*) &addr, sizeof addr);
+    if (r == -1 && errno != EINPROGRESS) {
+        close(sockfd);
+        return -1;
+    }
+
+    // if in progress let it carry on in the bg
+    return sockfd;
+}
+
+
+int finish_connect(int sockfd) {
+
+    // call once poll reports POLLOUT on a start_connect fd
+
+    // ret: 0 connected ok, -1 fail
+
+    int err = 0;
+    socklen_t len = sizeof err;
+    int r = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &err, &len);
+    if (r == -1 || err != 0) return -1;
+    return 0;
+}
+
+
+int send_msg(int sockfd, char* body) {
+
+    // returns 0 on success
+    // returns -1 on failure
+
+    char msg[MSG_BUF_SIZE];
+    int msgLen = snprintf(msg, sizeof msg, "%s%s", body, MSG_END);
+    if (msgLen < 0 || msgLen >= (int) sizeof msg) return -1;
+
+    int sentTotal = 0;
+    while (sentTotal < msgLen) {
+        ssize_t sent = send(sockfd, msg + sentTotal, msgLen - sentTotal, MSG_NOSIGNAL); // ret EPIPE instead of killing
+        if (sent == -1) return -1;
+        sentTotal += sent;
+    }
+
+    return 0;
+}
+
+
+int recv_into(int sockfd, char* buf, size_t* len) {
+
+    // APPEND to buf starting from buf+len
+
+    // returns 1 if bytes were read
+    // returns 0 if the peer closed the connection
+    // returns -1 on error, or if buf is alr full
+
+    size_t room = MSG_BUF_SIZE - 1 - *len; 
+    if (room == 0) return -1;
+
+    ssize_t n = recv(sockfd, buf + *len, room, 0);
+    if (n == -1) return -1;
+    if (n == 0) return 0;
+
+    *len += n;
+    buf[*len] = '\0';
+    return 1;
+}
+
+
+int xmsg(char* buf, size_t* len, char* out, size_t outSize) {
+
+    // take the first complete message out of buf, without its MSG_END
+    // whatever comes after it is kept at the front of buf
+
+    // returns 1 if a message was copied into out
+    // returns 0 if buf doesn't have MSG_END
+
+    char* end = strstr(buf, MSG_END);
+    if (end == NULL) return 0;
+
+    size_t msgLen = end - buf;
+    size_t copyLen = msgLen < outSize - 1 ? msgLen : outSize - 1;
+    memcpy(out, buf, copyLen);
+    out[copyLen] = '\0';
+
+    char* leftover = end + MSG_END_LEN;
+    size_t leftoverLen = (buf + *len) - leftover;
+    memmove(buf, leftover, leftoverLen);
+    *len = leftoverLen;
+    buf[*len] = '\0';
+
+    return 1;
 }

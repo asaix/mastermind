@@ -19,5 +19,6 @@ void challenge_handle_events(struct pollfd* pfds, int from, int count);
 void challenge_check_timeout();
 void challenge_handle_input(char* line, struct peer* peers, int peerCount);
 int challenge_game_started(char* name, bool* isMaster);
+void challenge_end_game();
 
 #endif

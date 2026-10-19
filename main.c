@@ -99,9 +99,17 @@ int main(int argc, char* argv[])
                 // ignore and reset dirty
                 clearerr(stdin);
             } else {
-                if (inGame && isMaster) master_input(line);
-                else if (inGame) breaker_input(line);
+                bool goHome = false;
+                if (inGame && isMaster) goHome = master_input(line);
+                else if (inGame) goHome = breaker_input(line);
                 else challenge_handle_input(line, peers, peerCount);
+
+                if (goHome) {
+                    inGame = false;
+                    challenge_end_game();
+                    cls();
+                    draw_status("");
+                }
                 draw_prompt();
             }
         }

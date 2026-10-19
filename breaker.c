@@ -132,12 +132,19 @@ void breaker_start(int sockfd, char* opponentName) {
 }
 
 
-void breaker_input(char* line) {
+bool breaker_input(char* line) {
 
     // handle a typed line
 
+    // returns true to go home
+
     line[strcspn(line, "\n")] = '\0';
-    if (gameFd == -1) return;
+    if (phase == GAME_OVER) {
+        // EOF may not have arrived
+        if (gameFd != -1) close(gameFd);
+        gameFd = -1;
+        return true;
+    }
 
     char status[STATUS_SIZE];
     if (phase == WAIT_SECRET) {
@@ -149,6 +156,7 @@ void breaker_input(char* line) {
     } else {
         enter_guess(line);
     }
+    return false;
 }
 
 

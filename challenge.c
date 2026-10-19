@@ -342,3 +342,13 @@ int challenge_game_started(char* name, bool* isMaster) {
     *isMaster = gameIsMaster;
     return active.fd;
 }
+
+
+void challenge_end_game() {
+
+    // back to IDLE after a game
+
+    // the game side already closed it
+    active.fd = -1;
+    mode = IDLE;
+}

@@ -170,16 +170,19 @@ void master_start(int sockfd, char* opponentName) {
 }
 
 
-void master_input(char* line) {
+bool master_input(char* line) {
 
     // a line typed at the prompt during the game
 
+    // returns true to go home
+
     line[strcspn(line, "\n")] = '\0';
-    if (gameFd == -1) return;
+    if (phase == GAME_OVER) return true;
 
     if (phase == SECRET) set_secret(line);
     else if (phase == FEEDBACK) feedback(line);
     else waiting_status();
+    return false;
 }
 
 

@@ -204,38 +204,25 @@ static void handle_extra(int i) {
 }
 
 
-int challenge_build_pollfds(struct pollfd** pfds, size_t* cap, int used) {
+void challenge_add_pollfds(struct pollfd** pfds, size_t* cap, int* n) {
 
-    // append the listening socket, active connection and extras after the first used entries
-    // grows *pfds as needed
+    // append the listening socket, active connection and extras to main's pollfd array
 
-    // returns the total number of entries
-
-    size_t need = used + 2 + extraCount;
-    if (need > *cap) {
-        *pfds = realloc(*pfds, need * sizeof **pfds);
-        if (*pfds == NULL) ewerror("challenge", "challenge_build_pollfds", "out of memory\n", 1);
-        *cap = need;
-    }
-
-    int n = used;
-    (*pfds)[n++] = (struct pollfd) { .fd = listenSock, .events = POLLIN };
-    // not polled in game: nothing reads it yet, and a closed peer would make poll return forever
+    pfd_add(pfds, cap, n, listenSock, POLLIN);
+    // not polled in game: the game code owns that socket now
     if (mode != IDLE && mode != IN_GAME) {
         short events = (mode == CONNECTING) ? POLLOUT : POLLIN;
-        (*pfds)[n++] = (struct pollfd) { .fd = active.fd, .events = events };
+        pfd_add(pfds, cap, n, active.fd, events);
     }
     for (int i = 0; i < extraCount; i++) {
-        (*pfds)[n++] = (struct pollfd) { .fd = extras[i].fd, .events = POLLIN };
+        pfd_add(pfds, cap, n, extras[i].fd, POLLIN);
     }
-
-    return n;
 }
 
 
 void challenge_handle_events(struct pollfd* pfds, int from, int count) {
 
-    // handle whatever poll reported on the entries challenge_build_pollfds added
+    // handle whatever poll reported on the entries challenge_add_pollfds added
     // the listening socket comes first, so new fds are made before any are closed this pass
 
     for (int i = from; i < count; i++) {

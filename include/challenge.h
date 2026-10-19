@@ -14,7 +14,7 @@ enum mode {
 };
 
 void challenge_init(int listenSock, char* myName, int myPort);
-int challenge_build_pollfds(struct pollfd** pfds, size_t* cap, int used);
+void challenge_add_pollfds(struct pollfd** pfds, size_t* cap, int* n);
 void challenge_handle_events(struct pollfd* pfds, int from, int count);
 void challenge_check_timeout();
 void challenge_handle_input(char* line, struct peer* peers, int peerCount);

@@ -26,6 +26,10 @@ static time_t started;
 static char peerName[NAME_FIELD_SIZE];
 static int peerPort;
 
+// set when a handshake ends in OK, cleared once main takes the game
+static bool gameReady = false;
+static bool gameIsMaster; // the challenger is the mastermind
+
 // connections that come in while we're busy, they get WHO ARE YOU then BUSY
 static struct conn* extras = NULL;
 static int extraCount = 0;
@@ -146,6 +150,8 @@ static void handle_reply(char* msg) {
     char status[STATUS_SIZE];
     if (sequal(msg, MSG_OK)) {
         mode = IN_GAME;
+        gameReady = true;
+        gameIsMaster = true;
         snprintf(status, sizeof status, "%s accepted.. game starting", peerName);
         draw_status(status);
         return;
@@ -270,6 +276,8 @@ void challenge_handle_input(char* line, struct peer* peers, int peerCount) {
         if (sequal(line, "yes")) {
             send_msg(active.fd, MSG_OK);
             mode = IN_GAME;
+            gameReady = true;
+            gameIsMaster = false;
             snprintf(status, sizeof status, "accepted %s.. game starting", peerName);
             draw_status(status);
         } else if (sequal(line, "no")) {
@@ -328,4 +336,22 @@ void challenge_handle_input(char* line, struct peer* peers, int peerCount) {
 
     snprintf(status, sizeof status, "challenging %s...", peerName);
     draw_status(status);
+}
+
+
+int challenge_game_started(char* name, bool* isMaster) {
+
+    // hands the game connection to main, once, right after a handshake ends in OK
+    // name gets the opponent's name (NAME_FIELD_SIZE bytes)
+    // we stay IN_GAME (busy) afterwards
+
+    // returns the game fd
+    // returns -1 if no game has just started
+
+    if (!gameReady) return -1;
+    gameReady = false;
+
+    snprintf(name, NAME_FIELD_SIZE, "%s", peerName);
+    *isMaster = gameIsMaster;
+    return active.fd;
 }

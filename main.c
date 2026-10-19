@@ -53,6 +53,11 @@ int main(int argc, char* argv[])
 
     challenge_init(gameSock, name, gamePort);
 
+    // -1 until a handshake hands us a game
+    int gameFd = -1;
+    bool isMaster = false;
+    char opponent[NAME_FIELD_SIZE];
+
     cls();
     draw_prompt();
 
@@ -85,6 +90,15 @@ int main(int argc, char* argv[])
 
         challenge_check_timeout();
 
+        // hs ok: load game screen
+        int newGame = challenge_game_started(opponent, &isMaster);
+        if (newGame != -1) {
+            gameFd = newGame;
+            cls();
+            draw_prompt();
+            // TODO: master_start(gameFd, opponent) if isMaster, breaker side otherwise
+        }
+
         if (time(NULL) - lastHello >= BROADCAST_FREQ) {
             hello_i_exist(discSock, name, gamePort);
             lastHello = time(NULL);
@@ -94,6 +108,6 @@ int main(int argc, char* argv[])
             ewerror("main", NULL, "failed to listen for peers\n", 2);
         }
 
-        draw_peers(peers, peerCount);
+        if (gameFd == -1) draw_peers(peers, peerCount);
     }
 }

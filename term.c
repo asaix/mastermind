@@ -29,7 +29,7 @@ char* name_entry() {
     char* name = malloc(MAX_NAME_SIZE * 2 * sizeof(char));
 
     fputs("Enter your name: ", stdout);
-    fgets(name, MAX_NAME_SIZE + 1, stdin); // +1 for \0
+    fgets(name, NAME_FIELD_SIZE, stdin); // MAX_NAME_SIZE chars + \0
 
     // drop trailing newline if present
     size_t newlineIndex = strcspn(name, "\n");

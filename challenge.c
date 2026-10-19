@@ -145,7 +145,10 @@ static void handle_reply(char* msg) {
 
     char status[STATUS_SIZE];
     if (sequal(msg, MSG_OK)) {
+        mode = IN_GAME;
         snprintf(status, sizeof status, "%s accepted.. game starting", peerName);
+        draw_status(status);
+        return;
     } else if (sequal(msg, MSG_NAH)) {
         snprintf(status, sizeof status, "%s declined", peerName);
     } else if (sequal(msg, MSG_BUSY)) {
@@ -211,7 +214,8 @@ int challenge_build_pollfds(struct pollfd** pfds, size_t* cap, int used) {
 
     int n = used;
     (*pfds)[n++] = (struct pollfd) { .fd = listenSock, .events = POLLIN };
-    if (mode != IDLE) {
+    // not polled in game: nothing reads it yet, and a closed peer would make poll return forever
+    if (mode != IDLE && mode != IN_GAME) {
         short events = (mode == CONNECTING) ? POLLOUT : POLLIN;
         (*pfds)[n++] = (struct pollfd) { .fd = active.fd, .events = events };
     }
@@ -250,7 +254,8 @@ void challenge_handle_events(struct pollfd* pfds, int from, int count) {
 
 
 void challenge_check_timeout() {
-    if (mode != IDLE && time(NULL) - started >= CHALLENGE_TIMEOUT) back_to_idle("challenge timed out");
+    if (mode == IDLE || mode == IN_GAME) return;
+    if (time(NULL) - started >= CHALLENGE_TIMEOUT) back_to_idle("challenge timed out");
 }
 
 
@@ -264,8 +269,9 @@ void challenge_handle_input(char* line, struct peer* peers, int peerCount) {
     if (mode == PROMPT) {
         if (sequal(line, "yes")) {
             send_msg(active.fd, MSG_OK);
+            mode = IN_GAME;
             snprintf(status, sizeof status, "accepted %s.. game starting", peerName);
-            back_to_idle(status);
+            draw_status(status);
         } else if (sequal(line, "no")) {
             send_msg(active.fd, MSG_NAH);
             snprintf(status, sizeof status, "declined %s", peerName);
@@ -278,6 +284,12 @@ void challenge_handle_input(char* line, struct peer* peers, int peerCount) {
     }
 
     if (line[0] == '\0') return;
+
+    if (mode == IN_GAME) {
+        snprintf(status, sizeof status, "in a game with %s", peerName);
+        draw_status(status);
+        return;
+    }
 
     if (mode != IDLE) {
         draw_status("busy with a challenge, wait for it to finish");

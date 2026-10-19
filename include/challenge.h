@@ -10,6 +10,7 @@ enum mode {
     IDLE,
     CONNECTING, WAIT_WHO, WAIT_REPLY, // we challenged someone
     WAIT_ID, PROMPT,                  // someone challenged us
+    IN_GAME,                          // handshake done
 };
 
 void challenge_init(int listenSock, char* myName, int myPort);

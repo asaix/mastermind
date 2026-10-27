@@ -1,0 +1,10 @@
+*.o
+*.d
+*.a
+*~
+.DS_Store
+compile_commands.json
+.cache/
+.vscode/
+/mastermind
+log.txt

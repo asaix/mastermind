@@ -106,4 +106,4 @@ Contributions are welcome. Please submit a PR or issue on Github.
 
 ## AI usage
 
-AI was only used to generate the implementation diagram.
+AI was used to generate the implementation diagram and a few quality of life changes.

@@ -32,7 +32,8 @@
 
 // fixed 2 rows below the board (taller than the lobby), so the prompt doesn't move between screens
 #define PROMPT_ROW (BOARD_BOTTOM_ROW + 2)
-#define STATUS_ROW (PROMPT_ROW + 1)
+#define HINT_ROW (PROMPT_ROW + 1) // lobby only, empty in game
+#define STATUS_ROW (HINT_ROW + 1)
 
 #define STATUS_SIZE 128
 
@@ -216,6 +217,11 @@ void draw_peers(struct peer* peers, int peerCount) {
     row_at(LOBBY_BOTTOM_ROW, col);
     border("┗", "┛", LOBBY_INNER, count);
     cc2eol();
+
+    // usage hint under the prompt, lined up with what you type
+    row_at(HINT_ROW, left_col(BOARD_WIDTH) + 4);
+    dim("challenge <ID>");
+    rst();
 
     restorecur();
     showcur();

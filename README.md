@@ -1,11 +1,11 @@
 <h1 align="center">mastermind</h1>
 
-<p align="center">Two-player Mastermind in your terminal, played over a LAN.</p>
+<p align="center">Play mastermind with others on your LAN.</p>
 
 ---
 
 mastermind is a program for playing [Mastermind](https://en.wikipedia.org/wiki/Mastermind_(board_game)) against someone else on
-your network. Start it on two machines and they find each other on their own.
+your network. 
 
 ```
 ┏━━━━━━━━━━━━━━━━━━━━━━ MASTERMIND ━━━━━━━━━━━━━━━━━━━━━━━┓

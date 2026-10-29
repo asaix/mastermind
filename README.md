@@ -72,6 +72,34 @@ right digit in the wrong place
 ```
 
 *Just like the real game, the mastermind enters the feedback manually, so they might lie. Be careful!*
+
+
+## Installing
+
+### From a release
+
+Download `mastermind-linux-x86_64.tar.gz` from the [latest release](../../releases/latest),
+then unpack it and run the install script, which copies `mastermind` to
+`~/.local/bin`:
+
+```sh
+tar -xzf mastermind-linux-x86_64.tar.gz
+./mastermind-linux-x86_64/install.sh
+```
+
+To remove it, run `./mastermind-linux-x86_64/uninstall.sh`.
+
+### From source
+
+```sh
+make install      # builds mastermind and installs it to ~/.local/bin
+make uninstall    # removes it
+```
+
+This installs for your user and doesn't need `sudo`. To install somewhere
+else, set `PREFIX` on both commands, e.g. `sudo make install PREFIX=/usr/local`.
+
+
 ## Building
 
 You need GCC 14+ (for C23) on Linux.

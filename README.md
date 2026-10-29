@@ -8,17 +8,23 @@ mastermind is a program for playing [Mastermind](https://en.wikipedia.org/wiki/M
 your network. Start it on two machines and they find each other on their own.
 
 ```
-Players Online:
-ID   Name            IP Addr         Port    Last Seen
-1    bob             10.94.78.196    7001    1 s. ago
-2    carol           10.94.78.12     7000    0 s. ago
-3    dave            10.94.78.203    7000    2 s. ago
-4    erin            10.94.78.57     7000    1 s. ago
-5    erin2           10.94.78.57     7001    3 s. ago
+┏━━━━━━━━━━━━━━━━━━━━━━ MASTERMIND ━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ID  NAME            IP              PORT      LAST SEEN ┃
+┠─────────────────────────────────────────────────────────┨
+┃ 1   bob             10.94.78.196    7001         1s ago ┃
+┃ 2   carol           10.94.78.12     7000         0s ago ┃
+┃ 3   dave            10.94.78.203    7000         2s ago ┃
+┃ 4   erin            10.94.78.57     7000         1s ago ┃
+┃ 5   erin2           10.94.78.57     7001         3s ago ┃
+┃                                                         ┃
+┃                                                         ┃
+┃                                                         ┃
+┃                                                         ┃
+┃                                                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━ 5 online ━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-________________________________________________________
-
-> challenge 2
+                 ❯ challenge 2
+                   challenge <ID>
 ```
 
 
@@ -39,17 +45,30 @@ right digit in the wrong place
 - `-` for not in the code.
 
 ```
-12345  oooo-
-41203  xoxox
-40231  xxxoo
-40213  xxxxx
-*****  *****
-...
------
-40213
+      mastermind (alice)                  codebreaker (bob)
 
->
-game over. press enter to go home
+┏━━━━┯━━━━━━━━━━━┯━━━━━━━━━━━┓      ┏━━━━┯━━━━━━━━━━━┯━━━━━━━━━━━┓
+┃  # │   GUESS   │ FEEDBACK  ┃      ┃  # │   GUESS   │ FEEDBACK  ┃
+┣━━━━┿━━━━━━━━━━━┿━━━━━━━━━━━┫      ┣━━━━┿━━━━━━━━━━━┿━━━━━━━━━━━┫
+┃ 01 │ 1 2 3 4 5 │ o o o o - ┃      ┃ 01 │ 1 2 3 4 5 │ o o o o - ┃
+┃ 02 │ 4 1 2 0 3 │ x o x o x ┃      ┃ 02 │ 4 1 2 0 3 │ x o x o x ┃
+┃ 03 │ 4 0 2 3 1 │           ┃      ┃ 03 │ 4 0 2 3 1 │           ┃
+┃ 04 │ · · · · · │ · · · · · ┃      ┃ 04 │ · · · · · │ · · · · · ┃
+┃ 05 │ · · · · · │ · · · · · ┃      ┃ 05 │ · · · · · │ · · · · · ┃
+┃ 06 │ · · · · · │ · · · · · ┃      ┃ 06 │ · · · · · │ · · · · · ┃
+┃ 07 │ · · · · · │ · · · · · ┃      ┃ 07 │ · · · · · │ · · · · · ┃
+┃ 08 │ · · · · · │ · · · · · ┃      ┃ 08 │ · · · · · │ · · · · · ┃
+┃ 09 │ · · · · · │ · · · · · ┃      ┃ 09 │ · · · · · │ · · · · · ┃
+┃ 10 │ · · · · · │ · · · · · ┃      ┃ 10 │ · · · · · │ · · · · · ┃
+┃ 11 │ · · · · · │ · · · · · ┃      ┃ 11 │ · · · · · │ · · · · · ┃
+┃ 12 │ · · · · · │ · · · · · ┃      ┃ 12 │ · · · · · │ · · · · · ┃
+┣━━━━┷━━━━━━━━━━━┷━━━━━━━━━━━┫      ┣━━━━┷━━━━━━━━━━━┷━━━━━━━━━━━┫
+┃      CODE  4 0 2 1 3       ┃      ┃      CODE  ? ? ? ? ?       ┃
+┗━━━━━━━━ MASTERMIND ━━━━━━━━┛      ┗━━━━━━━━ MASTERMIND ━━━━━━━━┛
+
+  ❯                                   ❯
+
+  feedback for 40231 (x o -)         waiting for alice's feedback
 ```
 
 *Just like the real game, the mastermind enters the feedback manually, so they might lie. Be careful!*

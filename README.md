@@ -32,8 +32,11 @@ mastermind [--log]
 
 Pick a name, then challenge someone from the lobby with `challenge <ID>`. If
 they accept, you set a secret 5-digit code and they get 12 guesses to find it.
-You score each guess yourself: `x` for right digit in the right place, `o` for
-right digit in the wrong place, `-` for not in the code.
+You score each guess yourself: 
+- `x` for right digit in the right place
+- `o` for
+right digit in the wrong place
+- `-` for not in the code.
 
 ```
 12345  oooo-
@@ -49,6 +52,7 @@ right digit in the wrong place, `-` for not in the code.
 game over. press enter to go home
 ```
 
+*Just like the real game, the mastermind enters the feedback manually, so they might lie. Be careful!*
 ## Building
 
 You need GCC 14+ (for C23) on Linux.
